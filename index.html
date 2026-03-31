@@ -22,10 +22,10 @@ const pipeImg = new Image();
 pipeImg.src = "pole.png";
 
 let loaded = 0;
+
 birdImg.onload = () => loaded++;
 pipeImg.onload = () => loaded++;
 
-// Start game after images load
 function startGame() {
 
 let bird = {
@@ -57,30 +57,47 @@ function createPipe() {
     x: canvas.width,
     top: top,
     bottom: top + gap,
-    width: 80
+    width: 80,
+    passed: false
   });
 }
 
 function update() {
   ctx.clearRect(0,0,canvas.width,canvas.height);
 
-  // Bird
+  // Bird movement
   bird.velocity += bird.gravity;
   bird.y += bird.velocity;
 
-  ctx.drawImage(birdImg, bird.x, bird.y, bird.w, bird.h);
+  // Draw bird
+  if (birdImg.complete) {
+    ctx.drawImage(birdImg, bird.x, bird.y, bird.w, bird.h);
+  } else {
+    ctx.fillStyle = "red";
+    ctx.fillRect(bird.x, bird.y, bird.w, bird.h);
+  }
 
-  // Pipes (friend faces 😂)
+  // Pipes
   for (let i = 0; i < pipes.length; i++) {
     let p = pipes[i];
 
-    // Top pipe
-    ctx.drawImage(pipeImg, p.x, 0, p.width, p.top);
-
-    // Bottom pipe
-    ctx.drawImage(pipeImg, p.x, p.bottom, p.width, canvas.height - p.bottom);
+    // Draw pipes
+    if (pipeImg.complete) {
+      ctx.drawImage(pipeImg, p.x, 0, p.width, p.top);
+      ctx.drawImage(pipeImg, p.x, p.bottom, p.width, canvas.height - p.bottom);
+    } else {
+      ctx.fillStyle = "green";
+      ctx.fillRect(p.x, 0, p.width, p.top);
+      ctx.fillRect(p.x, p.bottom, p.width, canvas.height);
+    }
 
     p.x -= 3;
+
+    // Score
+    if (!p.passed && p.x + p.width < bird.x) {
+      score++;
+      p.passed = true;
+    }
 
     // Collision
     if (
@@ -91,22 +108,24 @@ function update() {
       alert("Game Over 😂 Score: " + score);
       location.reload();
     }
-
-    // Score
-    if (p.x === bird.x) score++;
   }
 
+  // Remove pipes
   pipes = pipes.filter(p => p.x + p.width > 0);
 
+  // Create pipes
   frame++;
   if (frame % 90 === 0) createPipe();
 
-  // Score text
+  // Score display
   ctx.fillStyle = "black";
   ctx.font = "30px Arial";
   ctx.fillText("Score: " + score, 10, 40);
 
   requestAnimationFrame(update);
+}
+
+update();
 }
 
 // Wait until images load
@@ -116,7 +135,6 @@ let check = setInterval(() => {
     startGame();
   }
 }, 100);
-
 </script>
 </body>
 </html>
